@@ -1,0 +1,129 @@
+---
+title: "Trivia Homework Generator"
+date: "Last compiled on `r format(Sys.time(), '%c')`"
+output: html_document
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(data.table)
+```
+
+```{r}
+#current week, change every week
+dateseed <- "081622"
+
+```
+
+# Movies
+```{r}
+
+################## MOVIES
+
+# data manually collected from https://www.the-numbers.com/box-office-records/domestic/all-movies/cumulative/
+
+# domestic gross not adjusted for inflation
+
+
+movies0 <- suppressWarnings(read_excel("Top Grossing Movies.xlsx"))
+
+```
+
+### evergreen dataset called movies:
+```{r}
+movies <- movies0[,c("Year Rank", "Title", "Domestic Gross", "Year")]
+movies <- na.omit(movies)
+movies$movieID <- 1:nrow(movies)
+# movies weighted by their domestic gross box office amount
+movies$wt <- movies$`Domestic Gross`
+
+```
+
+
+### running dataset contains movies already sampled before (it's more fun to do it this way)
+
+```{r}
+
+temp <- list.files(path = "history/", pattern="movieshomework", full.names = TRUE)
+moviehist <- lapply(temp, read.csv)
+moviehist <- do.call(rbind, moviehist)
+
+newmovies <- movies
+newmovies <- movies[!(movies$movieID %in% moviehist$movieID),]
+
+#create the random sample of movies for the week
+set.seed(dateseed)
+z <- sample(newmovies$movieID, 40, replace = FALSE, prob = newmovies$wt/sum(newmovies$wt))
+
+movieshw <- movies[z,]
+
+# Don't run this unless you want to add a new dataset to the history:
+# fwrite(movieshw, paste0("C:/Users/Thomas/Documents/Trivia/history/movieshomework", dateseed, ".csv"))
+```
+
+
+
+#Music
+
+```{r}
+
+# data manually collected from this sketchy website: http://top40charts.net/
+
+music0 <- read_excel("Top Songs.xlsx")
+
+```
+
+
+```{r}
+
+### evergreen dataset of music
+
+# for some reason they switch from artist-song to song-artist in 2019....
+music <- music0 %>% separate(Song, c("Artist", "Title"), "\\n")
+music$Title <- trimws(music$Title)
+music2 <- music
+music[music$Year>=2019, "Title"] <- music2[music2$Year>=2019, "Artist"]
+music[music$Year>=2019, "Artist"] <- music2[music2$Year>=2019, "Title"]
+music$musicID <- 1:nrow(music)
+
+# exponential weighting function
+ewma.filter <- function (x, ratio) {
+  c(stats::filter(x * ratio, 1 - ratio, "recursive", init = x[1]))
+}
+
+# older years weigh the top few songs within a year much more heavily; recent years have more even weight given to all songs within a year.
+# across years, more weight given to songs in recent years, weighted exponentially
+music$wt <- (1/ewma.filter(1:(max(music$Year) - min(music$Year) + 1), 0.01)[max(music$Year) - music$Year + 1])*music$`Year Rank`^(-(1/sqrt(music$Year - min(music$Year) + 1)))
+
+```
+
+
+### running dataset 
+```{r}
+
+temp <- list.files(path = "history/", pattern="musichomework", full.names = TRUE)
+musichist <- lapply(temp, read.csv)
+musichist <- do.call(rbind, musichist)
+
+newmusic <- music
+newmusic <- music[!(music$musicID %in% musichist$musicID),]
+
+#create the random sample of music for the week
+set.seed(dateseed)
+y <- sample(newmusic$musicID, 40, replace = FALSE, prob = newmusic$wt/sum(newmusic$wt))
+
+musichw <- music[y,]
+
+# Don't run this unless you want to add a new dataset to the history:
+# fwrite(musichw, paste0("C:/Users/Thomas/Documents/Trivia/history/musichomework", dateseed, ".csv"))
+```
+
+
+
+
+
+
+
+
+
