@@ -12,7 +12,7 @@ library(data.table)
 
 ```{r}
 #current week, change every week
-dateseed <- "081622"
+dateseed <- "082322"
 
 ```
 
@@ -54,7 +54,7 @@ newmovies <- movies[!(movies$movieID %in% moviehist$movieID),]
 
 #create the random sample of movies for the week
 set.seed(dateseed)
-z <- sample(newmovies$movieID, 40, replace = FALSE, prob = newmovies$wt/sum(newmovies$wt))
+z <- sample(sample(newmovies$movieID, 40, replace = FALSE, prob = newmovies$wt/sum(newmovies$wt)), 40)
 
 movieshw <- movies[z,]
 
@@ -111,7 +111,7 @@ newmusic <- music[!(music$musicID %in% musichist$musicID),]
 
 #create the random sample of music for the week
 set.seed(dateseed)
-y <- sample(newmusic$musicID, 40, replace = FALSE, prob = newmusic$wt/sum(newmusic$wt))
+y <- sample(sample(newmusic$musicID, 40, replace = FALSE, prob = newmusic$wt/sum(newmusic$wt)), 40)
 
 musichw <- music[y,]
 
